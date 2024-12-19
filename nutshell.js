@@ -1,6 +1,6 @@
 let CD = '~';
 const files = [];
-const directories = ['git_practice', 'nutshell'];
+const directories = ['git', 'shell'];
 
 const PS1 = function (CD) {
   return 'pradeepmoganti@Pradeeps-MacBook-Pro ' + CD + ' %';
@@ -22,11 +22,28 @@ const echo = function (args) {
 }
 
 const ls = function (args) {
-  return files.length === 0 ? undefined : files.join(' ');
+  if (files.length === 0 && directories.length === 0) {
+    return undefined;
+  }
+
+  return files.join(' ') + directories.join(' ');
 }
 
 const touch = function (args) {
   files.push(args);
+  return undefined;
+}
+
+const rn = function (args) {
+  const filePath = args;
+
+  if (!directories.includes(filePath[0])) {
+    return 'cd: no such file or directory: ' + filePath[0];
+  }
+
+  const indexOfFile = directories.indexOf(filePath[0]);
+  directories.splice(indexOfFile, 1, filePath[1]);
+
   return undefined;
 }
 
@@ -38,6 +55,7 @@ const runCommand = function (command) {
     case 'echo': return echo(args);
     case 'ls': return ls(args);
     case 'touch': return touch(args);
+    case 'rn': return rn(args);
   }
 
   return 'parse code 0300: terminal on update [-d][--help][--forcestop/exit]';
