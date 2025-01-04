@@ -1,74 +1,58 @@
-let CD = '~';
-const files = [];
-const directories = ['git', 'shell'];
+import { root } from "./data.js";
 
-const PS1 = function (CD) {
-  return 'pradeepmoganti@Pradeeps-MacBook-Pro ' + CD + ' %';
-}
+const restore1Lvl = (path) => {
+  const prevLvl = path.pathStack.pop();
+  path.currentPath = prevLvl;
+  path.promptString = `${path.promptString.match(/.*(?=\/)/)[0]} %`;
+};
 
-const cd = function (args) {
-  const filePath = args.split('/').at(-1);
+const isObject = (a) => {
+  return !Array.isArray(a) && typeof a === "object";
+};
 
-  if (directories.includes(filePath)) {
-    CD = filePath;
-    return undefined;
+const cd = (path, x) => {
+  if (x === ".") return undefined;
+  if (x === "..") return restore1Lvl(path);
+  if (!(x in path.currentPath)) return `cd: no such file or directory: ${x}`;
+  if (!isObject(path.currentPath[x])) return `cd: not a directory: ${x}`;
+
+  path.pathStack = [...path.pathStack, path.currentPath];
+  path.currentPath = path.currentPath[x];
+  path.promptString = `${path.promptString.split(" %")[0]}/${x} %`;
+};
+
+const ls = (path) => {
+  return Object.keys(path.currentPath).join("\n");
+};
+
+const runCmd = (cmd, params) => {
+  const cmds = {
+    cd: cd,
+    ls: ls,
+  };
+
+  if (!(cmd in cmds)) return `zsh: command not found: ${cmd}`;
+  return cmds[cmd](...params);
+};
+
+const nutshell = (path) => {
+  const cmd = prompt(path.promptString);
+  const array = cmd.match(/[\w.]+/g);
+
+  return runCmd(array[0], [path, ...array.slice(1)]);
+};
+
+const main = () => {
+  const path = {
+    promptString: "shell/root %",
+    currentPath: root,
+    pathStack: [],
+  };
+
+  while (true) {
+    const result = nutshell(path, root);
+    if (result !== undefined) console.log(result);
   }
+};
 
-  return 'cd: no such file or directory: ' + filePath;
-}
-
-const echo = function (args) {
-  return args.join(' ');
-}
-
-const ls = function (args) {
-  if (files.length === 0 && directories.length === 0) {
-    return undefined;
-  }
-
-  return files.join(' ') + directories.join(' ');
-}
-
-const touch = function (args) {
-  files.push(args);
-  return undefined;
-}
-
-const rn = function (args) {
-  const filePath = args;
-
-  if (!directories.includes(filePath[0])) {
-    return 'cd: no such file or directory: ' + filePath[0];
-  }
-
-  const indexOfFile = directories.indexOf(filePath[0]);
-  directories.splice(indexOfFile, 1, filePath[1]);
-
-  return undefined;
-}
-
-const runCommand = function (command) {
-  const [cmd, ...args] = command.split(' ');
-
-  switch (cmd) {
-    case 'cd': return cd(...args);
-    case 'echo': return echo(args);
-    case 'ls': return ls(args);
-    case 'touch': return touch(args);
-    case 'rn': return rn(args);
-  }
-
-  return 'parse code 0300: terminal on update [-d][--help][--forcestop/exit]';
-}
-
-function displayResult(message) {
-  if (message !== undefined) {
-    console.log(message);
-  }
-}
-
-while (true) {
-  const command = prompt(PS1(CD));
-  const message = runCommand(command);
-  displayResult(message);
-}
+main();
